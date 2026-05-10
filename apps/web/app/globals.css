@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 27% 98%;
+    --foreground: 224 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 25% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 25% 12%;
+    --primary: 164 72% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 18% 93%;
+    --secondary-foreground: 224 25% 16%;
+    --muted: 220 16% 94%;
+    --muted-foreground: 220 9% 42%;
+    --accent: 210 88% 47%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 18% 86%;
+    --input: 220 18% 86%;
+    --ring: 164 72% 32%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 24% 8%;
+    --foreground: 210 30% 96%;
+    --card: 222 22% 11%;
+    --card-foreground: 210 30% 96%;
+    --popover: 222 22% 11%;
+    --popover-foreground: 210 30% 96%;
+    --primary: 164 66% 46%;
+    --primary-foreground: 222 24% 8%;
+    --secondary: 218 18% 16%;
+    --secondary-foreground: 210 30% 96%;
+    --muted: 218 18% 16%;
+    --muted-foreground: 215 14% 66%;
+    --accent: 209 84% 58%;
+    --accent-foreground: 222 24% 8%;
+    --destructive: 0 63% 44%;
+    --destructive-foreground: 210 30% 96%;
+    --border: 218 16% 21%;
+    --input: 218 16% 21%;
+    --ring: 164 66% 46%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen antialiased;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+}
