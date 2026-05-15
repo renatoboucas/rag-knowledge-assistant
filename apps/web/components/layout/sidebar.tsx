@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   BrainCircuit,
+  Cable,
   Database,
   LayoutDashboard,
   MessageSquareText,
@@ -21,6 +22,7 @@ const icons = {
   LayoutDashboard,
   MessageSquareText,
   Database,
+  Cable,
   Activity,
   ShieldCheck,
   Users,

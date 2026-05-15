@@ -32,8 +32,34 @@ enum DocumentSourceType {
   URL
   NOTION
   GOOGLE_DRIVE
+  CONFLUENCE
   SLACK
+  GITHUB
   API
+}
+
+enum ConnectorProvider {
+  GOOGLE_DRIVE
+  NOTION
+  CONFLUENCE
+  SLACK
+  GITHUB
+}
+
+enum ConnectorStatus {
+  DISCONNECTED
+  CONNECTED
+  SYNCING
+  ERROR
+  PAUSED
+}
+
+enum ConnectorSyncStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 enum ConversationStatus {
@@ -81,6 +107,7 @@ model User {
   prompts     Prompt[]     @relation("PromptCreatedBy")
   observabilityEvents ObservabilityEvent[]
   auditLogs   AuditLog[]
+  connectors  Connector[]  @relation("ConnectorCreatedBy")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -109,6 +136,8 @@ model Organization {
   observabilityEvents ObservabilityEvent[]
   auditLogs AuditLog[]
   rateLimitBuckets RateLimitBucket[]
+  connectors Connector[]
+  connectorSyncJobs ConnectorSyncJob[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -162,6 +191,60 @@ model Document {
   @@index([organizationId, sourceType])
   @@index([organizationId, checksum])
   @@map("documents")
+}
+
+model Connector {
+  id                 String            @id @default(cuid())
+  organizationId     String            @map("organization_id")
+  createdById        String?           @map("created_by_id")
+  provider           ConnectorProvider
+  name               String
+  status             ConnectorStatus   @default(DISCONNECTED)
+  config             Json              @default("{}")
+  credentials        Json              @default("{}")
+  syncCursor         String?           @map("sync_cursor")
+  lastSyncStartedAt  DateTime?         @map("last_sync_started_at")
+  lastSyncFinishedAt DateTime?         @map("last_sync_finished_at")
+  lastWebhookAt      DateTime?         @map("last_webhook_at")
+  errorMessage       String?           @map("error_message")
+  isEnabled          Boolean           @default(true) @map("is_enabled")
+  syncIntervalMin    Int               @default(60) @map("sync_interval_min")
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy          User?             @relation("ConnectorCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  syncJobs           ConnectorSyncJob[]
+  deletedAt          DateTime?         @map("deleted_at")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  @@unique([organizationId, provider, name])
+  @@index([organizationId, provider, status, deletedAt])
+  @@index([organizationId, isEnabled, syncIntervalMin])
+  @@map("connectors")
+}
+
+model ConnectorSyncJob {
+  id             String              @id @default(cuid())
+  organizationId String              @map("organization_id")
+  connectorId    String              @map("connector_id")
+  status         ConnectorSyncStatus @default(QUEUED)
+  syncType       String              @default("manual") @map("sync_type")
+  startedAt      DateTime?           @map("started_at")
+  finishedAt     DateTime?           @map("finished_at")
+  cursorBefore   String?             @map("cursor_before")
+  cursorAfter    String?             @map("cursor_after")
+  documentsSeen  Int                 @default(0) @map("documents_seen")
+  documentsAdded Int                 @default(0) @map("documents_added")
+  documentsUpdated Int               @default(0) @map("documents_updated")
+  errorMessage   String?             @map("error_message")
+  metadata       Json                @default("{}")
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connector      Connector           @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  @@index([organizationId, connectorId, status])
+  @@index([organizationId, status, createdAt])
+  @@map("connector_sync_jobs")
 }
 
 model DocumentChunk {

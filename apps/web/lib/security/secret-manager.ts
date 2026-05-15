@@ -41,6 +41,24 @@ export class SecretManager {
       decipher.final(),
     ]).toString("utf8");
   }
+
+  encryptJson(value: unknown) {
+    return { encrypted: this.encrypt(JSON.stringify(value ?? {})) };
+  }
+
+  decryptJson<T>(payload: unknown, fallback: T): T {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return fallback;
+    }
+
+    const encrypted = (payload as { encrypted?: unknown }).encrypted;
+
+    if (typeof encrypted !== "string") {
+      return fallback;
+    }
+
+    return JSON.parse(this.decrypt(encrypted)) as T;
+  }
 }
 
 export const secretManager = new SecretManager();

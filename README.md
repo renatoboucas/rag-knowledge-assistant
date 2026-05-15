@@ -51,6 +51,7 @@ pnpm format:check    # Check formatting
 - `/dashboard` dashboard shell and overview
 - `/dashboard/chat` streaming RAG chat workspace
 - `/dashboard/knowledge-base` document management and upload workspace
+- `/dashboard/connectors` enterprise source connector management
 - `/dashboard/observability` AI, retrieval, usage, and performance telemetry
 - `/dashboard/security` audit logs, governance settings, rate limits, and GDPR controls
 - `/dashboard/settings` workspace and profile settings
@@ -112,6 +113,32 @@ AI_RATE_LIMIT_REQUESTS=20
 SECURITY_BLOCK_PROMPT_INJECTION=true
 SECURITY_ENABLE_MODERATION=true
 DATA_RETENTION_DAYS=365
+CONNECTOR_WEBHOOK_SECRET=replace_with_connector_webhook_secret
+```
+
+## Enterprise Source Connectors
+
+The connector framework lives under `apps/web/lib/connectors` and supports Google Drive, Notion, Confluence, Slack, and GitHub.
+
+- `ConnectorAdapter` defines a provider-neutral contract for sync, verification, webhook handling, and document normalization.
+- Provider adapters map remote records into tenant-scoped `documents` and `document_chunks`.
+- `connectors` stores encrypted provider credentials, sync settings, cursors, status, webhook timestamps, and soft-delete state.
+- `connector_sync_jobs` stores manual, scheduled, and webhook-triggered sync history.
+- `ConnectorSyncQueue` provides an in-process background job boundary that can be replaced with BullMQ, Inngest, Trigger.dev, or a managed worker.
+- Incremental sync is cursor-ready through `syncCursor` and `cursorBefore`/`cursorAfter` job fields.
+- Webhook updates are accepted at `POST /api/connectors/webhooks` and protected by `CONNECTOR_WEBHOOK_SECRET` when configured.
+- Connector management is exposed at `/dashboard/connectors`.
+
+Connector APIs:
+
+```bash
+GET /api/connectors
+POST /api/connectors
+PATCH /api/connectors/:connectorId
+DELETE /api/connectors/:connectorId
+GET /api/connectors/sync
+POST /api/connectors/sync
+POST /api/connectors/webhooks
 ```
 
 ## RAG Database Architecture
@@ -189,6 +216,7 @@ AI_RATE_LIMIT_REQUESTS=20
 SECURITY_BLOCK_PROMPT_INJECTION=true
 SECURITY_ENABLE_MODERATION=true
 DATA_RETENTION_DAYS=365
+CONNECTOR_WEBHOOK_SECRET=replace_with_connector_webhook_secret
 OPENAI_API_KEY=sk-proj_replace_me
 ANTHROPIC_API_KEY=sk-ant_replace_me
 GOOGLE_API_KEY=replace_me
