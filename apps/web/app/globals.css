@@ -67,4 +67,24 @@
       "Segoe UI",
       sans-serif;
   }
+
+  .hljs {
+    @apply text-foreground bg-transparent;
+  }
+
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-title.function_ {
+    color: hsl(var(--primary));
+  }
+
+  .hljs-string,
+  .hljs-attr,
+  .hljs-symbol {
+    color: hsl(var(--accent));
+  }
+
+  .hljs-comment {
+    color: hsl(var(--muted-foreground));
+  }
 }

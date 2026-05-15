@@ -1,0 +1,418 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  INDEXED
+  FAILED
+  ARCHIVED
+}
+
+enum DocumentSourceType {
+  UPLOAD
+  URL
+  NOTION
+  GOOGLE_DRIVE
+  SLACK
+  API
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum MessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+  TOOL
+}
+
+enum PromptStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum MemoryType {
+  SHORT_TERM
+  LONG_TERM
+  SUMMARY
+  PREFERENCE
+  FACT
+  TASK
+}
+
+enum MemoryStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id          String       @id @default(cuid())
+  clerkId     String       @unique @map("clerk_id")
+  email       String       @unique
+  firstName   String?      @map("first_name")
+  lastName    String?      @map("last_name")
+  imageUrl    String?      @map("image_url")
+  memberships Membership[]
+  documents   Document[]   @relation("DocumentCreatedBy")
+  messages    Message[]
+  prompts     Prompt[]     @relation("PromptCreatedBy")
+  observabilityEvents ObservabilityEvent[]
+  auditLogs   AuditLog[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Organization {
+  id          String       @id @default(cuid())
+  clerkId     String       @unique @map("clerk_id")
+  name        String
+  slug        String?
+  imageUrl    String?      @map("image_url")
+  dataRegion  String       @default("us") @map("data_region")
+  retentionDays Int        @default(365) @map("retention_days")
+  memberships Membership[]
+  documents   Document[]
+  documentChunks DocumentChunk[]
+  embeddings  Embedding[]
+  conversations Conversation[]
+  messages    Message[]
+  conversationSummaries ConversationSummary[]
+  memoryItems MemoryItem[]
+  prompts     Prompt[]
+  retrievalLogs RetrievalLog[]
+  observabilityEvents ObservabilityEvent[]
+  auditLogs AuditLog[]
+  rateLimitBuckets RateLimitBucket[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@map("organizations")
+}
+
+model Membership {
+  id                String           @id @default(cuid())
+  userId            String?          @map("user_id")
+  organizationId    String           @map("organization_id")
+  clerkInvitationId String?          @unique @map("clerk_invitation_id")
+  clerkRole         String           @map("clerk_role")
+  role              MembershipRole   @default(MEMBER)
+  status            MembershipStatus @default(ACTIVE)
+  invitedEmail      String?          @map("invited_email")
+  user              User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+  @@index([invitedEmail])
+  @@map("memberships")
+}
+
+model Document {
+  id             String             @id @default(cuid())
+  organizationId String             @map("organization_id")
+  createdById    String?            @map("created_by_id")
+  title          String
+  sourceType     DocumentSourceType @default(UPLOAD) @map("source_type")
+  sourceUri      String?            @map("source_uri")
+  mimeType       String?            @map("mime_type")
+  checksum       String?
+  metadata       Json               @default("{}")
+  status         DocumentStatus     @default(PENDING)
+  tokenCount     Int                @default(0) @map("token_count")
+  chunkCount     Int                @default(0) @map("chunk_count")
+  errorMessage   String?            @map("error_message")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User?              @relation("DocumentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  chunks         DocumentChunk[]
+  retrievalLogs  RetrievalLog[]
+  deletedAt      DateTime?          @map("deleted_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, sourceType])
+  @@index([organizationId, checksum])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  documentId     String       @map("document_id")
+  content        String
+  contentHash    String       @map("content_hash")
+  chunkIndex     Int          @map("chunk_index")
+  tokenCount     Int          @default(0) @map("token_count")
+  startChar      Int?         @map("start_char")
+  endChar        Int?         @map("end_char")
+  metadata       Json         @default("{}")
+  document       Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  embeddings     Embedding[]
+  retrievalLogs  RetrievalLog[]
+  deletedAt      DateTime?    @map("deleted_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([documentId, chunkIndex])
+  @@index([organizationId, documentId, deletedAt])
+  @@index([organizationId, contentHash])
+  @@map("document_chunks")
+}
+
+model Embedding {
+  id             String                   @id @default(cuid())
+  organizationId String                   @map("organization_id")
+  chunkId        String                   @map("chunk_id")
+  provider       String
+  model          String
+  dimensions     Int
+  vector         Unsupported("vector(1536)")
+  metadata       Json                     @default("{}")
+  chunk          DocumentChunk            @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  retrievalLogs  RetrievalLog[]
+  deletedAt      DateTime?                @map("deleted_at")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+
+  @@unique([chunkId, provider, model])
+  @@index([organizationId, provider, model, deletedAt])
+  @@map("embeddings")
+}
+
+model Conversation {
+  id             String             @id @default(cuid())
+  organizationId String             @map("organization_id")
+  title          String
+  status         ConversationStatus @default(ACTIVE)
+  metadata       Json               @default("{}")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  summaries      ConversationSummary[]
+  memoryItems    MemoryItem[]
+  retrievalLogs  RetrievalLog[]
+  deletedAt      DateTime?          @map("deleted_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  @@index([organizationId, status, deletedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  conversationId String       @map("conversation_id")
+  userId         String?      @map("user_id")
+  role           MessageRole
+  content        String
+  metadata       Json         @default("{}")
+  tokenCount     Int          @default(0) @map("token_count")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  memoryItems    MemoryItem[]
+  deletedAt      DateTime?    @map("deleted_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@index([organizationId, conversationId, createdAt])
+  @@index([organizationId, role])
+  @@map("messages")
+}
+
+model ConversationSummary {
+  id                  String       @id @default(cuid())
+  organizationId      String       @map("organization_id")
+  conversationId      String       @map("conversation_id")
+  summary             String
+  messageCount        Int          @default(0) @map("message_count")
+  coveredMessageIds   String[]     @default([]) @map("covered_message_ids")
+  inputTokenCount     Int          @default(0) @map("input_token_count")
+  summaryTokenCount   Int          @default(0) @map("summary_token_count")
+  compressionRatio    Float?       @map("compression_ratio")
+  metadata            Json         @default("{}")
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  deletedAt           DateTime?    @map("deleted_at")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  @@index([organizationId, conversationId, createdAt])
+  @@map("conversation_summaries")
+}
+
+model MemoryItem {
+  id              String         @id @default(cuid())
+  organizationId  String         @map("organization_id")
+  conversationId  String?        @map("conversation_id")
+  sourceMessageId String?        @map("source_message_id")
+  type            MemoryType     @default(LONG_TERM)
+  status          MemoryStatus   @default(ACTIVE)
+  content         String
+  summary         String?
+  importance      Float          @default(0.5)
+  tokenCount      Int            @default(0) @map("token_count")
+  provider        String?
+  model           String?
+  dimensions      Int?
+  vector          Unsupported("vector(1536)")?
+  metadata        Json           @default("{}")
+  accessCount     Int            @default(0) @map("access_count")
+  lastAccessedAt  DateTime?      @map("last_accessed_at")
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation    Conversation?  @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  sourceMessage   Message?       @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
+  deletedAt       DateTime?      @map("deleted_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([organizationId, type, status, deletedAt])
+  @@index([organizationId, conversationId, createdAt])
+  @@index([organizationId, importance])
+  @@map("memory_items")
+}
+
+model Prompt {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  createdById    String?      @map("created_by_id")
+  name           String
+  key            String
+  version        Int          @default(1)
+  status         PromptStatus @default(DRAFT)
+  template       String
+  metadata       Json         @default("{}")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User?        @relation("PromptCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  deletedAt      DateTime?    @map("deleted_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([organizationId, key, version])
+  @@index([organizationId, status, deletedAt])
+  @@map("prompts")
+}
+
+model RetrievalLog {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  conversationId String?        @map("conversation_id")
+  documentId     String?        @map("document_id")
+  chunkId        String?        @map("chunk_id")
+  embeddingId    String?        @map("embedding_id")
+  query          String
+  provider       String?
+  model          String?
+  similarity     Float?
+  rank           Int?
+  latencyMs      Int?           @map("latency_ms")
+  metadata       Json           @default("{}")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation   Conversation?  @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  document       Document?      @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  chunk          DocumentChunk? @relation(fields: [chunkId], references: [id], onDelete: SetNull)
+  embedding      Embedding?     @relation(fields: [embeddingId], references: [id], onDelete: SetNull)
+  deletedAt      DateTime?      @map("deleted_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([organizationId, conversationId, createdAt])
+  @@index([organizationId, documentId])
+  @@index([organizationId, chunkId])
+  @@map("retrieval_logs")
+}
+
+model ObservabilityEvent {
+  id             String        @id @default(cuid())
+  organizationId String?       @map("organization_id")
+  userId         String?       @map("user_id")
+  category       String
+  name           String
+  level          String        @default("info")
+  traceId        String?       @map("trace_id")
+  provider       String?
+  model          String?
+  inputTokens    Int           @default(0) @map("input_tokens")
+  outputTokens   Int           @default(0) @map("output_tokens")
+  totalTokens    Int           @default(0) @map("total_tokens")
+  estimatedCost  Float         @default(0) @map("estimated_cost")
+  latencyMs      Int?          @map("latency_ms")
+  metadata       Json          @default("{}")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([organizationId, category, createdAt])
+  @@index([organizationId, name, createdAt])
+  @@index([traceId])
+  @@map("observability_events")
+}
+
+model AuditLog {
+  id             String        @id @default(cuid())
+  organizationId String?       @map("organization_id")
+  userId         String?       @map("user_id")
+  action         String
+  resource       String
+  resourceId     String?       @map("resource_id")
+  outcome        String        @default("success")
+  ipAddress      String?       @map("ip_address")
+  userAgent      String?       @map("user_agent")
+  metadata       Json          @default("{}")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([organizationId, action, createdAt])
+  @@index([organizationId, resource, resourceId])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+model RateLimitBucket {
+  id             String        @id @default(cuid())
+  organizationId String?       @map("organization_id")
+  key            String
+  route          String
+  count          Int           @default(0)
+  windowStart    DateTime      @map("window_start")
+  expiresAt      DateTime      @map("expires_at")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@unique([key, route, windowStart])
+  @@index([organizationId, route, expiresAt])
+  @@map("rate_limit_buckets")
+}

@@ -2,15 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BrainCircuit, Database, LayoutDashboard, MessageSquareText, Settings } from "lucide-react";
+import {
+  Activity,
+  BrainCircuit,
+  Database,
+  LayoutDashboard,
+  MessageSquareText,
+  Settings,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { cn } from "@rag/ui";
 
 import { navigation } from "@/components/layout/navigation";
+import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 
 const icons = {
   LayoutDashboard,
   MessageSquareText,
   Database,
+  Activity,
+  ShieldCheck,
+  Users,
   Settings,
 };
 
@@ -44,6 +57,9 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="sm:hidden">
+        <WorkspaceSelector />
+      </div>
       <div className="bg-card text-card-foreground mt-auto rounded-lg border p-4">
         <p className="text-sm font-medium">Index status</p>
         <p className="text-muted-foreground mt-1 text-xs leading-5">

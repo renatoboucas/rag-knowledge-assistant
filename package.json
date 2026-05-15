@@ -8,6 +8,11 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
@@ -16,14 +21,23 @@
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
     "@rag/config": "workspace:*",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "prettier": "^3.4.2",
+    "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,css}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "pg": "^8.20.0"
   }
 }

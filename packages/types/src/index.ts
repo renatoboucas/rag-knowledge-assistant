@@ -18,3 +18,28 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
 };
+
+export type WorkspaceRole = "owner" | "admin" | "member" | "viewer";
+
+export type Permission =
+  | "workspace:read"
+  | "workspace:update"
+  | "members:read"
+  | "members:invite"
+  | "members:remove"
+  | "knowledge:read"
+  | "knowledge:write"
+  | "settings:read"
+  | "settings:update"
+  | "security:read"
+  | "security:audit"
+  | "data:export"
+  | "data:delete";
+
+export type Workspace = {
+  id: string;
+  clerkId: string;
+  name: string;
+  slug?: string | null;
+  role: WorkspaceRole;
+};

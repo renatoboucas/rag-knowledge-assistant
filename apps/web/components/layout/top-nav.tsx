@@ -1,10 +1,12 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import { Menu, Search } from "lucide-react";
-import { Avatar, AvatarFallback, Button, Input, Sheet, SheetContent, SheetTrigger } from "@rag/ui";
+import { Button, Input, Sheet, SheetContent, SheetTrigger } from "@rag/ui";
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 
 export function TopNav() {
   return (
@@ -24,10 +26,17 @@ export function TopNav() {
         <Input className="pl-9" placeholder="Search sources, chats, citations..." />
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <div className="hidden sm:block">
+          <WorkspaceSelector />
+        </div>
         <ThemeToggle />
-        <Avatar>
-          <AvatarFallback className="text-xs font-semibold">RA</AvatarFallback>
-        </Avatar>
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "size-9",
+            },
+          }}
+        />
       </div>
     </header>
   );

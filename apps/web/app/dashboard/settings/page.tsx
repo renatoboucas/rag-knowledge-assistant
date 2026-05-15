@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Input } from "@rag/ui";
 
 import { PageHeader } from "@/features/dashboard/page-header";
+import { ProfileSettings } from "@/features/settings/profile-settings";
 
 export default function SettingsPage() {
   return (
@@ -41,6 +42,9 @@ export default function SettingsPage() {
             <p>Environment validation is ready to expand as backend integrations are added.</p>
           </CardContent>
         </Card>
+      </div>
+      <div className="mt-4">
+        <ProfileSettings />
       </div>
     </div>
   );

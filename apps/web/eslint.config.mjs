@@ -1,3 +1,5 @@
 import config from "@rag/config/eslint/next";
 
-export default config;
+const eslintConfig = [{ ignores: ["next-env.d.ts"] }, ...config];
+
+export default eslintConfig;

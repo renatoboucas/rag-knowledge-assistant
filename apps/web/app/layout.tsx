@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 
 import { Providers } from "@/components/providers/providers";
 import { env } from "@/lib/env";
@@ -17,7 +18,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          appearance={{
+            variables: {
+              colorPrimary: "hsl(164 72% 32%)",
+              borderRadius: "0.5rem",
+            },
+          }}
+        >
+          <Providers>{children}</Providers>
+        </ClerkProvider>
       </body>
     </html>
   );
