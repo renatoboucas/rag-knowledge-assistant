@@ -62,6 +62,28 @@ enum ConnectorSyncStatus {
   CANCELLED
 }
 
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkflowTriggerType {
+  MANUAL
+  SCHEDULE
+  CONNECTOR_WEBHOOK
+  DOCUMENT_CREATED
+}
+
+enum WorkflowRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 enum ConversationStatus {
   ACTIVE
   ARCHIVED
@@ -108,6 +130,7 @@ model User {
   observabilityEvents ObservabilityEvent[]
   auditLogs   AuditLog[]
   connectors  Connector[]  @relation("ConnectorCreatedBy")
+  workflows   Workflow[]   @relation("WorkflowCreatedBy")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -138,6 +161,8 @@ model Organization {
   rateLimitBuckets RateLimitBucket[]
   connectors Connector[]
   connectorSyncJobs ConnectorSyncJob[]
+  workflows Workflow[]
+  workflowRuns WorkflowRun[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -245,6 +270,71 @@ model ConnectorSyncJob {
   @@index([organizationId, connectorId, status])
   @@index([organizationId, status, createdAt])
   @@map("connector_sync_jobs")
+}
+
+model Workflow {
+  id                 String              @id @default(cuid())
+  organizationId     String              @map("organization_id")
+  createdById        String?             @map("created_by_id")
+  name               String
+  description        String?
+  status             WorkflowStatus      @default(DRAFT)
+  triggerType        WorkflowTriggerType @map("trigger_type")
+  triggerConfig      Json                @default("{}") @map("trigger_config")
+  actions            Json                @default("[]")
+  lastRunAt          DateTime?           @map("last_run_at")
+  nextRunAt          DateTime?           @map("next_run_at")
+  lastRunStatus      WorkflowRunStatus?  @map("last_run_status")
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy          User?               @relation("WorkflowCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  runs               WorkflowRun[]
+  deletedAt          DateTime?           @map("deleted_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@index([organizationId, status, triggerType, deletedAt])
+  @@index([organizationId, nextRunAt])
+  @@map("workflows")
+}
+
+model WorkflowRun {
+  id             String            @id @default(cuid())
+  organizationId String            @map("organization_id")
+  workflowId     String            @map("workflow_id")
+  status         WorkflowRunStatus @default(QUEUED)
+  triggerType    WorkflowTriggerType @map("trigger_type")
+  input          Json              @default("{}")
+  output         Json              @default("{}")
+  errorMessage   String?           @map("error_message")
+  startedAt      DateTime?         @map("started_at")
+  finishedAt     DateTime?         @map("finished_at")
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflow       Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  steps          WorkflowRunStep[]
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@index([organizationId, workflowId, status])
+  @@index([organizationId, status, createdAt])
+  @@map("workflow_runs")
+}
+
+model WorkflowRunStep {
+  id             String            @id @default(cuid())
+  workflowRunId  String            @map("workflow_run_id")
+  actionType     String            @map("action_type")
+  status         WorkflowRunStatus @default(QUEUED)
+  input          Json              @default("{}")
+  output         Json              @default("{}")
+  errorMessage   String?           @map("error_message")
+  startedAt      DateTime?         @map("started_at")
+  finishedAt     DateTime?         @map("finished_at")
+  run            WorkflowRun       @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@index([workflowRunId, status])
+  @@map("workflow_run_steps")
 }
 
 model DocumentChunk {

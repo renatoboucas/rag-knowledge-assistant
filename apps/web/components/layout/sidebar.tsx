@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  Workflow,
 } from "lucide-react";
 import { cn } from "@rag/ui";
 
@@ -23,6 +24,7 @@ const icons = {
   MessageSquareText,
   Database,
   Cable,
+  Workflow,
   Activity,
   ShieldCheck,
   Users,

@@ -52,6 +52,7 @@ pnpm format:check    # Check formatting
 - `/dashboard/chat` streaming RAG chat workspace
 - `/dashboard/knowledge-base` document management and upload workspace
 - `/dashboard/connectors` enterprise source connector management
+- `/dashboard/workflows` AI workflow automation builder and run history
 - `/dashboard/observability` AI, retrieval, usage, and performance telemetry
 - `/dashboard/security` audit logs, governance settings, rate limits, and GDPR controls
 - `/dashboard/settings` workspace and profile settings
@@ -139,6 +140,30 @@ DELETE /api/connectors/:connectorId
 GET /api/connectors/sync
 POST /api/connectors/sync
 POST /api/connectors/webhooks
+```
+
+## AI Workflow Automation
+
+The workflow engine lives under `apps/web/lib/workflows` and provides tenant-scoped orchestration for AI and ingestion operations.
+
+- `workflows` stores workflow definitions, trigger configuration, action graphs, run status, and scheduling metadata.
+- `workflow_runs` and `workflow_run_steps` store execution history with step-level outputs and errors.
+- `WorkflowService` creates, updates, schedules, triggers, and executes workflows.
+- `WorkflowQueue` provides the background execution boundary for manual and scheduled runs.
+- Supported triggers include manual, scheduled, connector webhook, and document-created events.
+- Supported actions include syncing one connector, syncing all due connectors, ingesting pending documents, and generating AI document summaries.
+- Connector webhooks can launch matching active workflows after provider sync jobs are queued.
+- Workflow management is exposed at `/dashboard/workflows`.
+
+Workflow APIs:
+
+```bash
+GET /api/workflows
+POST /api/workflows
+PATCH /api/workflows/:workflowId
+DELETE /api/workflows/:workflowId
+GET /api/workflows/run
+POST /api/workflows/run
 ```
 
 ## RAG Database Architecture

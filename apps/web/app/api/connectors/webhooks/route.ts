@@ -5,6 +5,8 @@ import { connectorSyncQueue } from "@/lib/connectors/jobs/connector-sync-queue";
 import { connectorService } from "@/lib/connectors/services/connector-service";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { workflowQueue } from "@/lib/workflows/jobs/workflow-queue";
+import { workflowService } from "@/lib/workflows/services/workflow-service";
 
 export const runtime = "nodejs";
 
@@ -58,6 +60,26 @@ export async function POST(request: Request) {
     connectorId: job.connectorId,
     organizationId: job.organizationId,
   });
+  const workflowRuns = await workflowService.triggerMatching(
+    parsed.data.organizationId,
+    "CONNECTOR_WEBHOOK",
+    {
+      connectorId: parsed.data.connectorId,
+      provider: parsed.data.provider,
+      connectorSyncJobId: job.id,
+    },
+  );
 
-  return NextResponse.json({ accepted: true, jobId: job.id }, { status: 202 });
+  for (const run of workflowRuns) {
+    workflowQueue.enqueue({
+      runId: run.id,
+      workflowId: run.workflowId,
+      organizationId: run.organizationId,
+    });
+  }
+
+  return NextResponse.json(
+    { accepted: true, jobId: job.id, workflowRuns: workflowRuns.length },
+    { status: 202 },
+  );
 }
