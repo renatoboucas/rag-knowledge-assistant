@@ -17,6 +17,7 @@ import type { RetrievalContext, RetrievalRequest } from "@/lib/rag/types/retriev
 import { WeightedReranker } from "@/lib/rag/rerankers/weighted-reranker";
 import type { Reranker } from "@/lib/rag/rerankers/reranker";
 import { ContextBuilder } from "@/lib/rag/services/context-builder";
+import { cacheKey, getOrSetCache } from "@/lib/performance/cache";
 
 export class RetrievalEngine {
   private readonly stages: RetrievalStage[];
@@ -38,6 +39,28 @@ export class RetrievalEngine {
   }
 
   async retrieve(input: RetrievalRequest): Promise<RetrievalContext> {
+    const retrievalCacheKey = cacheKey([
+      "retrieval",
+      input.organizationId,
+      input.query.trim().toLowerCase(),
+      input.mode ?? "hybrid",
+      input.limit ?? env.RAG_RETRIEVAL_LIMIT,
+      input.minSimilarity ?? env.RAG_MIN_SIMILARITY,
+      JSON.stringify(input.metadataFilter ?? {}),
+      Boolean(input.enableQueryDecomposition),
+      Boolean(input.enableMultiQuery),
+    ]);
+
+    if (env.RAG_RETRIEVAL_CACHE_SECONDS > 0) {
+      return getOrSetCache(retrievalCacheKey, env.RAG_RETRIEVAL_CACHE_SECONDS, () =>
+        this.retrieveUncached(input),
+      );
+    }
+
+    return this.retrieveUncached(input);
+  }
+
+  private async retrieveUncached(input: RetrievalRequest): Promise<RetrievalContext> {
     const startedAt = Date.now();
     const query = this.preprocessor.preprocess(input.query);
     const limit = input.limit ?? env.RAG_RETRIEVAL_LIMIT;

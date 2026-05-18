@@ -1,5 +1,12 @@
-import { KnowledgeBaseDashboard } from "@/components/knowledge/knowledge-base-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const KnowledgeBaseDashboard = dynamic(() =>
+  import("@/components/knowledge/knowledge-base-dashboard").then(
+    (mod) => mod.KnowledgeBaseDashboard,
+  ),
+);
 
 export default function KnowledgeBasePage() {
   return (

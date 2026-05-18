@@ -1,5 +1,12 @@
-import { ObservabilityDashboard } from "@/components/observability/observability-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const ObservabilityDashboard = dynamic(() =>
+  import("@/components/observability/observability-dashboard").then(
+    (mod) => mod.ObservabilityDashboard,
+  ),
+);
 
 export default function ObservabilityPage() {
   return (

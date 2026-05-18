@@ -113,7 +113,7 @@ export function ObservabilityDashboard() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/observability/metrics", { cache: "no-store" });
+      const response = await fetch("/api/observability/metrics");
 
       if (response.ok) {
         setMetrics((await response.json()) as MetricsPayload);

@@ -214,7 +214,7 @@ export function AdminDashboard() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/admin/metrics?days=30", { cache: "no-store" });
+      const response = await fetch("/api/admin/metrics?days=30");
 
       if (response.ok) {
         setPayload((await response.json()) as AdminPayload);

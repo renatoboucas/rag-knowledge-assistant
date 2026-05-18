@@ -1,5 +1,10 @@
-import { UploadDashboard } from "@/components/upload/upload-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const UploadDashboard = dynamic(() =>
+  import("@/components/upload/upload-dashboard").then((mod) => mod.UploadDashboard),
+);
 
 export default function UploadPage() {
   return (

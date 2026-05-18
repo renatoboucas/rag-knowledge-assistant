@@ -4,6 +4,7 @@ import { LlmOrchestrator } from "@/lib/ai/llm-orchestrator";
 import { modelMessageContent } from "@/lib/ai/message-content";
 import { ConversationRepository } from "@/lib/db/repositories/conversation-repository";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 import { MemoryService } from "@/lib/memory/memory-service";
 import { RetrievalEngine } from "@/lib/rag/services/retrieval-engine";
 import type { ChatRequestMessage, Citation } from "@/lib/rag/types/retrieval";
@@ -94,7 +95,7 @@ export class RagChatService {
       task: "rag-chat",
       messages,
       temperature: 0.2,
-      maxOutputTokens: 4096,
+      maxOutputTokens: env.AI_MAX_OUTPUT_TOKENS,
     });
 
     let answer = "";
@@ -113,6 +114,7 @@ export class RagChatService {
               `event: meta\ndata: ${JSON.stringify({ conversationId, citations, model: route.selected })}\n\n`,
             ),
           );
+          controller.enqueue(encoder.encode(`event: ready\ndata: {}\n\n`));
 
           for await (const chunk of stream) {
             const text = modelMessageContent(

@@ -31,7 +31,8 @@ export class ContextBuilder {
 
     const contextText = selected
       .map((result) => {
-        const content = truncateToTokenBudget(result.content, Math.max(160, remaining + maxTokens));
+        const perChunkBudget = Math.max(160, Math.floor(maxTokens / Math.max(selected.length, 1)));
+        const content = truncateToTokenBudget(result.content, perChunkBudget);
 
         return [
           `[${result.citationId}] ${result.documentTitle}`,

@@ -1,5 +1,10 @@
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const AdminDashboard = dynamic(() =>
+  import("@/components/admin/admin-dashboard").then((mod) => mod.AdminDashboard),
+);
 
 export default function AdminPage() {
   return (

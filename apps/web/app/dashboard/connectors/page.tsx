@@ -1,5 +1,10 @@
-import { ConnectorsDashboard } from "@/components/connectors/connectors-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const ConnectorsDashboard = dynamic(() =>
+  import("@/components/connectors/connectors-dashboard").then((mod) => mod.ConnectorsDashboard),
+);
 
 export default function ConnectorsPage() {
   return (

@@ -41,8 +41,28 @@ pnpm dev             # Run the web app
 pnpm build           # Build all workspace packages
 pnpm lint            # Lint all packages
 pnpm typecheck       # Type-check all packages
+pnpm test:unit       # Run Vitest unit and integration tests
+pnpm test:coverage   # Run Vitest with V8 coverage
+pnpm test:e2e        # Run Playwright browser tests
+pnpm test:all        # Type-check, lint, coverage, and E2E checks
 pnpm format          # Format the repo
 pnpm format:check    # Check formatting
+```
+
+## Testing Architecture
+
+The production testing pipeline is configured at the monorepo root.
+
+- Vitest runs TypeScript unit and integration tests in `apps/web` and `packages`.
+- React Testing Library validates client components with the shared Next.js test setup in `apps/web/test/setup.ts`.
+- Playwright runs responsive E2E checks against the Next.js app with an automatic dev server.
+- AI response validation tests cover citation requirements, risk-aware uncertainty language, and hallucination guardrails.
+- Coverage reports are written to `coverage/` as text, lcov, and JSON summary outputs.
+
+Install Playwright browsers once on a new machine:
+
+```bash
+pnpm exec playwright install chromium
 ```
 
 ## Pages
@@ -103,6 +123,17 @@ The admin dashboard is available at `/dashboard/admin` for organization admins.
 - AI monitoring for calls, tokens, provider breakdown, latency, errors, and recent events.
 - Billing metrics with plan estimate, seat count, base subscription, token overage, and projected monthly total.
 - Admin data is exposed through `GET /api/admin/metrics` and remains scoped to the active organization.
+
+## Performance
+
+Production performance optimizations include:
+
+- Private tenant-keyed TTL caching for expensive admin and observability analytics.
+- Cache-control headers for authenticated analytics APIs and immutable CDN headers for static assets.
+- Dynamic imports for heavyweight dashboard modules to reduce initial dashboard bundle pressure.
+- RAG retrieval result caching with `RAG_RETRIEVAL_CACHE_SECONDS`.
+- Bounded retrieved context chunks and `AI_MAX_OUTPUT_TOKENS` to reduce token spend and latency.
+- Streaming responses disable proxy buffering with `X-Accel-Buffering: no`.
 
 ## Security And Governance
 
@@ -277,6 +308,9 @@ RAG_MIN_SIMILARITY=0.2
 RAG_MULTI_QUERY_LIMIT=4
 RAG_CANDIDATE_MULTIPLIER=4
 RAG_CONTEXT_MAX_TOKENS=3200
+RAG_RETRIEVAL_CACHE_SECONDS=60
+AI_MAX_OUTPUT_TOKENS=1600
+ANALYTICS_CACHE_SECONDS=30
 MEMORY_RECENT_MESSAGE_LIMIT=10
 MEMORY_RETRIEVAL_LIMIT=6
 MEMORY_MAX_CONTEXT_TOKENS=1800

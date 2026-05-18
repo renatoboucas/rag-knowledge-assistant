@@ -1,5 +1,10 @@
-import { SecurityDashboard } from "@/components/security/security-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const SecurityDashboard = dynamic(() =>
+  import("@/components/security/security-dashboard").then((mod) => mod.SecurityDashboard),
+);
 
 export default function SecurityPage() {
   return (

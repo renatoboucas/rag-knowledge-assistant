@@ -1,5 +1,10 @@
-import { WorkflowsDashboard } from "@/components/workflows/workflows-dashboard";
+import dynamic from "next/dynamic";
+
 import { PageHeader } from "@/features/dashboard/page-header";
+
+const WorkflowsDashboard = dynamic(() =>
+  import("@/components/workflows/workflows-dashboard").then((mod) => mod.WorkflowsDashboard),
+);
 
 export default function WorkflowsPage() {
   return (
