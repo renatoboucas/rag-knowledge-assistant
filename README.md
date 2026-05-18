@@ -49,6 +49,7 @@ pnpm format:check    # Check formatting
 
 - `/` landing page
 - `/dashboard` dashboard shell and overview
+- `/dashboard/admin` enterprise admin platform
 - `/dashboard/chat` streaming RAG chat workspace
 - `/dashboard/knowledge-base` document management and upload workspace
 - `/dashboard/connectors` enterprise source connector management
@@ -91,6 +92,17 @@ pnpm db:seed
 ```
 
 Protected app routes are enforced in `apps/web/middleware.ts`. API routes perform their own session, organization, role, and input validation before mutating data.
+
+## Enterprise Admin Platform
+
+The admin dashboard is available at `/dashboard/admin` for organization admins.
+
+- User management table with roles, statuses, invitations, and active seats.
+- Workspace management metrics for documents, indexed content, connectors, workflows, and retrieval quality.
+- Usage analytics with daily message and token charting.
+- AI monitoring for calls, tokens, provider breakdown, latency, errors, and recent events.
+- Billing metrics with plan estimate, seat count, base subscription, token overage, and projected monthly total.
+- Admin data is exposed through `GET /api/admin/metrics` and remains scoped to the active organization.
 
 ## Security And Governance
 
