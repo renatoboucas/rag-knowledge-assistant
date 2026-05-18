@@ -1,0 +1,66 @@
+name: Vercel Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: Vercel deployment URL to roll back to
+        required: true
+        type: string
+      reason:
+        description: Rollback reason
+        required: false
+        type: string
+
+concurrency:
+  group: rollback-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+jobs:
+  rollback:
+    name: Roll back production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Roll back Vercel production
+        run: pnpm exec vercel rollback "${{ inputs.deployment_url }}" --yes --token="$VERCEL_TOKEN"
+
+      - name: Write rollback summary
+        run: |
+          {
+            echo "### Production rollback"
+            echo
+            echo "Rolled back to: ${{ inputs.deployment_url }}"
+            echo
+            echo "Reason: ${{ inputs.reason || 'Not provided' }}"
+          } >> "$GITHUB_STEP_SUMMARY"

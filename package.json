@@ -8,6 +8,7 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
+    "ci": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm test:e2e && pnpm build",
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest",
@@ -43,6 +44,7 @@
     "prisma": "^7.8.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
+    "vercel": "^54.1.0",
     "vitest": "^4.1.6"
   },
   "lint-staged": {

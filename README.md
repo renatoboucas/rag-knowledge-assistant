@@ -39,6 +39,7 @@ Open `http://localhost:3000`.
 ```bash
 pnpm dev             # Run the web app
 pnpm build           # Build all workspace packages
+pnpm run ci          # Run the full local CI gate
 pnpm lint            # Lint all packages
 pnpm typecheck       # Type-check all packages
 pnpm test:unit       # Run Vitest unit and integration tests
@@ -64,6 +65,43 @@ Install Playwright browsers once on a new machine:
 ```bash
 pnpm exec playwright install chromium
 ```
+
+## CI/CD And Deployment
+
+GitHub Actions owns the production delivery pipeline.
+
+- `.github/workflows/ci.yml` runs on pull requests and `main` pushes with formatting, linting, type-checking, Vitest coverage, and Playwright E2E tests.
+- `.github/workflows/deploy.yml` runs the pre-deployment gate, creates Vercel preview deployments for pull requests, and deploys production from `main`.
+- `.github/workflows/rollback.yml` provides a manual production rollback flow through Vercel CLI.
+- `vercel.json` pins the Vercel build and install commands for the monorepo.
+
+Required GitHub repository secrets:
+
+```bash
+VERCEL_TOKEN=...
+VERCEL_ORG_ID=...
+VERCEL_PROJECT_ID=...
+```
+
+Configure GitHub Environments named `preview` and `production`. Put deployment-specific application secrets in Vercel Environment Variables, not in GitHub Actions, so `vercel pull --environment=preview|production` hydrates the correct values during deployment.
+
+Production environment variables must include:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://your-production-domain.com
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+DATABASE_URL=...
+ENCRYPTION_KEY=...
+OPENAI_API_KEY=...
+```
+
+Deployment behavior:
+
+- Pull requests run CI and publish an isolated Vercel preview URL.
+- Merges to `main` run the same quality gate and publish production.
+- Manual workflow dispatch can deploy either preview or production.
+- Rollbacks are manual and require the target previous Vercel deployment URL.
 
 ## Pages
 
