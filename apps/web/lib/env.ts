@@ -3,22 +3,47 @@ import { z } from "zod";
 const emptyStringToUndefined = (value: unknown) =>
   typeof value === "string" && value.trim() === "" ? undefined : value;
 
+const normalizeUrl = (value: unknown) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/i.test(trimmed)) {
+    return `http://${trimmed}`;
+  }
+
+  return `https://${trimmed}`;
+};
+
 const optionalString = (schema: z.ZodString) =>
   z.preprocess(emptyStringToUndefined, schema.optional());
 
+const urlWithDefault = (fallback: string) =>
+  z.preprocess(normalizeUrl, z.string().url().default(fallback));
+
 const envSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: urlWithDefault("http://localhost:3000"),
   NEXT_PUBLIC_APP_NAME: z.string().min(1).default("RAG Knowledge Assistant"),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: optionalString(z.string().min(1)),
   NEXT_PUBLIC_SENTRY_DSN: optionalString(z.string().url()),
   NEXT_PUBLIC_POSTHOG_KEY: optionalString(z.string().min(1)),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string().url().default("https://us.i.posthog.com"),
+  NEXT_PUBLIC_POSTHOG_HOST: urlWithDefault("https://us.i.posthog.com"),
   CLERK_SECRET_KEY: optionalString(z.string().min(1)),
   DATABASE_URL: optionalString(z.string().url()),
   SENTRY_DSN: optionalString(z.string().url()),
   SENTRY_ENVIRONMENT: z.string().min(1).default("development"),
   POSTHOG_KEY: optionalString(z.string().min(1)),
-  POSTHOG_HOST: z.string().url().default("https://us.i.posthog.com"),
+  POSTHOG_HOST: urlWithDefault("https://us.i.posthog.com"),
   LANGSMITH_TRACING: z.coerce.boolean().default(false),
   LANGSMITH_API_KEY: optionalString(z.string().min(1)),
   LANGSMITH_PROJECT: z.string().min(1).default("rag-knowledge-assistant"),
@@ -39,7 +64,7 @@ const envSchema = z.object({
   AI_FALLBACK_ORDER: z.string().min(1).default("openai,anthropic,gemini"),
   AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(45000),
   AGENT_MAX_STEPS: z.coerce.number().int().positive().max(12).default(6),
-  WEB_SEARCH_ENDPOINT: z.string().url().default("https://api.duckduckgo.com/"),
+  WEB_SEARCH_ENDPOINT: urlWithDefault("https://api.duckduckgo.com/"),
   ENCRYPTION_KEY: optionalString(z.string().min(32)),
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_REQUESTS: z.coerce.number().int().positive().default(60),
