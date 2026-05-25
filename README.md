@@ -113,6 +113,7 @@ Deployment behavior:
 - `/dashboard/connectors` enterprise source connector management
 - `/dashboard/workflows` AI workflow automation builder and run history
 - `/dashboard/evaluations` AI retrieval, hallucination, and response quality benchmark platform
+- `/dashboard/developer` public API keys, SDKs, documentation, and request logs
 - `/dashboard/observability` AI, retrieval, usage, and performance telemetry
 - `/dashboard/security` audit logs, governance settings, rate limits, and GDPR controls
 - `/dashboard/settings` workspace and profile settings
@@ -448,6 +449,34 @@ POST /api/evaluations/datasets
 GET /api/evaluations/runs
 POST /api/evaluations/runs
 GET /api/evaluations/runs/:runId
+```
+
+## Public API Platform
+
+The developer platform is available at `/dashboard/developer` and exposes tenant-scoped API access through hashed bearer keys.
+
+- `api_keys` stores key hashes, prefixes, scopes, per-key rate limits, expiration, revocation, and usage timestamps.
+- `api_request_logs` stores public API request history with tenant isolation, API key attribution, status codes, latency, IP address, and user agent.
+- API keys are only revealed once at creation time; the database stores SHA-256 hashes and display prefixes.
+- Public requests use `Authorization: Bearer rka_...`, scope checks, per-key fixed-window rate limiting, and request logging.
+- Owner/admin users can create and revoke keys with `developer:manage`; members/viewers can read developer docs and usage with `developer:read`.
+- OpenAPI and generated TypeScript SDK source are served directly from the app.
+
+Developer APIs:
+
+```bash
+GET /api/developer/api-keys
+POST /api/developer/api-keys
+DELETE /api/developer/api-keys/:keyId
+GET /api/developer/openapi
+GET /api/developer/sdk/typescript
+```
+
+Public APIs:
+
+```bash
+GET /api/public/v1/documents
+POST /api/public/v1/retrieval
 ```
 
 ## Agent Framework

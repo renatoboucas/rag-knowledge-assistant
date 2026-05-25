@@ -17,6 +17,7 @@ export default defineConfig({
         "apps/web/features/dashboard/page-header.tsx",
         "apps/web/lib/ai/response-validation.ts",
         "apps/web/lib/billing/plans.ts",
+        "apps/web/lib/developer/api-key-service.ts",
         "apps/web/lib/evaluations/scoring-service.ts",
         "apps/web/lib/memory/token-counter.ts",
         "apps/web/lib/performance/cache.ts",

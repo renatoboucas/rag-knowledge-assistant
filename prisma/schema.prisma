@@ -161,6 +161,7 @@ model User {
   auditLogs   AuditLog[]
   connectors  Connector[]  @relation("ConnectorCreatedBy")
   workflows   Workflow[]   @relation("WorkflowCreatedBy")
+  apiKeys     ApiKey[]      @relation("ApiKeyCreatedBy")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -201,6 +202,8 @@ model Organization {
   evaluationCases EvaluationCase[]
   evaluationRuns EvaluationRun[]
   evaluationResults EvaluationResult[]
+  apiKeys ApiKey[]
+  apiRequestLogs ApiRequestLog[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -626,6 +629,51 @@ model RateLimitBucket {
   @@unique([key, route, windowStart])
   @@index([organizationId, route, expiresAt])
   @@map("rate_limit_buckets")
+}
+
+model ApiKey {
+  id                 String          @id @default(cuid())
+  organizationId     String          @map("organization_id")
+  createdById        String?         @map("created_by_id")
+  name               String
+  prefix             String
+  keyHash            String          @unique @map("key_hash")
+  scopes             Json            @default("[]")
+  rateLimitPerMinute Int             @default(60) @map("rate_limit_per_minute")
+  lastUsedAt         DateTime?       @map("last_used_at")
+  expiresAt          DateTime?       @map("expires_at")
+  revokedAt          DateTime?       @map("revoked_at")
+  metadata           Json            @default("{}")
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy          User?           @relation("ApiKeyCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  requestLogs        ApiRequestLog[]
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@index([organizationId, revokedAt])
+  @@index([organizationId, prefix])
+  @@map("api_keys")
+}
+
+model ApiRequestLog {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  apiKeyId       String?      @map("api_key_id")
+  method         String
+  path           String
+  status         Int
+  latencyMs      Int          @map("latency_ms")
+  ipAddress      String?      @map("ip_address")
+  userAgent      String?      @map("user_agent")
+  metadata       Json         @default("{}")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  apiKey         ApiKey?      @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@index([apiKeyId, createdAt])
+  @@index([organizationId, path, createdAt])
+  @@map("api_request_logs")
 }
 
 model BillingCustomer {

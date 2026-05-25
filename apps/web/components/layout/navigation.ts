@@ -8,6 +8,7 @@ export const navigation: NavItem[] = [
   { title: "Connectors", href: "/dashboard/connectors", icon: "Cable" },
   { title: "Workflows", href: "/dashboard/workflows", icon: "Workflow" },
   { title: "Evaluations", href: "/dashboard/evaluations", icon: "ClipboardCheck" },
+  { title: "Developer", href: "/dashboard/developer", icon: "KeyRound" },
   { title: "Observability", href: "/dashboard/observability", icon: "Activity" },
   { title: "Security", href: "/dashboard/security", icon: "ShieldCheck" },
   { title: "Members", href: "/dashboard/members", icon: "Users" },
