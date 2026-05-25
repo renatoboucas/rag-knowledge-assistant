@@ -30,7 +30,10 @@ export function hashApiKey(secret: string) {
 }
 
 export function apiKeyPrefix(secret: string) {
-  const [namespace, token = ""] = secret.split("_");
+  const separator = secret.indexOf("_");
+  const namespace = separator >= 0 ? secret.slice(0, separator) : KEY_PREFIX;
+  const token = separator >= 0 ? secret.slice(separator + 1) : secret;
+
   return `${namespace}_${token.slice(0, 8)}`;
 }
 
