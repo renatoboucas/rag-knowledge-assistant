@@ -13,4 +13,5 @@ test-results
 pnpm-debug.log*
 .env.development.local
 .env.production.local
-storage
+/storage
+/apps/web/storage
