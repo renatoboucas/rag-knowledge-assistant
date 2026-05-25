@@ -9,7 +9,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html"], ["github"]] : [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3100",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100",
     launchOptions: {
       args: ["--proxy-server=direct://", "--proxy-bypass-list=*"],
     },
@@ -22,12 +22,12 @@ export default defineConfig({
     cwd: "./apps/web",
     env: {
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? "sk_test_playwright",
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100",
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3100",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
         process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
         "pk_test_cGxheXdyaWdodC50ZXN0LmNsZXJrLmFjY291bnRzLmRldiQ",
     },
-    url: "http://localhost:3100",
+    url: "http://127.0.0.1:3100",
     reuseExistingServer: false,
     timeout: 120_000,
   },

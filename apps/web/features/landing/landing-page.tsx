@@ -35,7 +35,7 @@ export function LandingPage() {
       <section className="relative isolate">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.18),transparent_32%),linear-gradient(135deg,hsl(var(--background)),hsl(var(--muted)))]" />
         <div className="container flex min-h-[92vh] flex-col justify-between py-6">
-          <nav className="flex items-center justify-between">
+          <nav className="flex items-center justify-between" aria-label="Primary navigation">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md">
                 <BrainCircuit className="size-5" />

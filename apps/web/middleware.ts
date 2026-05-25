@@ -1,5 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
+const isPublicApiRoute = createRouteMatcher([
+  "/api/public(.*)",
+  "/api/developer/openapi(.*)",
+  "/api/developer/sdk(.*)",
+]);
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/api(.*)"]);
 const isAdminRoute = createRouteMatcher([
   "/dashboard/admin(.*)",
@@ -9,6 +14,10 @@ const isAdminRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  if (isPublicApiRoute(req)) {
+    return;
+  }
+
   if (isAdminRoute(req)) {
     await auth.protect((has) => has({ role: "org:admin" }));
     return;

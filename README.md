@@ -46,6 +46,7 @@ pnpm test:unit       # Run Vitest unit and integration tests
 pnpm test:coverage   # Run Vitest with V8 coverage
 pnpm test:e2e        # Run Playwright browser tests
 pnpm test:all        # Type-check, lint, coverage, and E2E checks
+pnpm load:smoke      # Run a no-dependency HTTP load smoke test
 pnpm format          # Format the repo
 pnpm format:check    # Check formatting
 ```
@@ -544,6 +545,28 @@ POST /api/embeddings/:documentId
 - Tooling defaults live in `packages/config`.
 - The dashboard shell includes responsive sidebar navigation, top navigation, loading states, error boundaries, and dark/light theme support.
 - Clerk session context is synchronized into Prisma on dashboard access so app data can be joined to authenticated users and active organizations.
+
+## Production Launch Hardening
+
+Launch-candidate guardrails are built into the app and validation suite.
+
+- Security headers are applied globally through `apps/web/next.config.ts`, including CSP, frame denial, content-type protection, referrer policy, permissions policy, and cross-origin opener policy.
+- Static assets use immutable CDN caching while app/API routes keep authenticated behavior dynamic.
+- Error boundaries capture client-side failures with Sentry and show support-safe messages instead of raw exception text.
+- Playwright hardening checks cover security headers, public API unauthorized behavior, accessible landmarks, primary actions, and a launch smoke performance budget.
+- `pnpm load:smoke` runs a no-dependency HTTP concurrency check against `LOAD_TEST_URL` and fails when p95 latency or error-rate thresholds are exceeded.
+
+Load test configuration:
+
+```bash
+LOAD_TEST_URL=http://localhost:3100
+LOAD_TEST_PATH=/
+LOAD_TEST_WARMUP_REQUESTS=4
+LOAD_TEST_REQUESTS=40
+LOAD_TEST_CONCURRENCY=8
+LOAD_TEST_MAX_P95_MS=2500
+LOAD_TEST_MAX_ERROR_RATE=0.01
+```
 
 ## Production Expansion
 
