@@ -7,6 +7,7 @@ export const navigation: NavItem[] = [
   { title: "Knowledge Base", href: "/dashboard/knowledge-base", icon: "Database" },
   { title: "Connectors", href: "/dashboard/connectors", icon: "Cable" },
   { title: "Workflows", href: "/dashboard/workflows", icon: "Workflow" },
+  { title: "Evaluations", href: "/dashboard/evaluations", icon: "ClipboardCheck" },
   { title: "Observability", href: "/dashboard/observability", icon: "Activity" },
   { title: "Security", href: "/dashboard/security", icon: "ShieldCheck" },
   { title: "Members", href: "/dashboard/members", icon: "Users" },

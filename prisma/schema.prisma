@@ -139,6 +139,13 @@ enum BillingUsageMetric {
   SEATS
 }
 
+enum EvaluationRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id          String       @id @default(cuid())
   clerkId     String       @unique @map("clerk_id")
@@ -190,6 +197,10 @@ model Organization {
   subscriptions Subscription[]
   usageEvents UsageEvent[]
   invoices Invoice[]
+  evaluationDatasets EvaluationDataset[]
+  evaluationCases EvaluationCase[]
+  evaluationRuns EvaluationRun[]
+  evaluationResults EvaluationResult[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -703,4 +714,93 @@ model Invoice {
   @@index([organizationId, createdAt])
   @@index([stripeCustomerId])
   @@map("invoices")
+}
+
+model EvaluationDataset {
+  id             String           @id @default(cuid())
+  organizationId String           @map("organization_id")
+  name           String
+  description    String?
+  metadata       Json             @default("{}")
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cases          EvaluationCase[]
+  runs           EvaluationRun[]
+  deletedAt      DateTime?        @map("deleted_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@unique([organizationId, name])
+  @@index([organizationId, deletedAt])
+  @@map("evaluation_datasets")
+}
+
+model EvaluationCase {
+  id                  String              @id @default(cuid())
+  organizationId      String              @map("organization_id")
+  datasetId           String              @map("dataset_id")
+  query               String
+  expectedAnswer      String?             @map("expected_answer")
+  expectedCitationIds Json                @default("[]") @map("expected_citation_ids")
+  requiredKeywords    Json                @default("[]") @map("required_keywords")
+  expectedDocuments   Json                @default("[]") @map("expected_documents")
+  metadata            Json                @default("{}")
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataset             EvaluationDataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  results             EvaluationResult[]
+  deletedAt           DateTime?           @map("deleted_at")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  @@index([organizationId, datasetId, deletedAt])
+  @@map("evaluation_cases")
+}
+
+model EvaluationRun {
+  id                 String              @id @default(cuid())
+  organizationId     String              @map("organization_id")
+  datasetId          String              @map("dataset_id")
+  name               String
+  status             EvaluationRunStatus @default(QUEUED)
+  retrievalMode      String              @default("hybrid") @map("retrieval_mode")
+  aggregateScores    Json                @default("{}") @map("aggregate_scores")
+  metadata           Json                @default("{}")
+  startedAt          DateTime?           @map("started_at")
+  completedAt        DateTime?           @map("completed_at")
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataset            EvaluationDataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  results            EvaluationResult[]
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@index([organizationId, datasetId, createdAt])
+  @@index([organizationId, status])
+  @@map("evaluation_runs")
+}
+
+model EvaluationResult {
+  id                    String         @id @default(cuid())
+  organizationId        String         @map("organization_id")
+  runId                 String         @map("run_id")
+  caseId                String         @map("case_id")
+  query                 String
+  answer                String
+  retrievedCitationIds  Json           @default("[]") @map("retrieved_citation_ids")
+  retrievedDocumentIds  Json           @default("[]") @map("retrieved_document_ids")
+  context               String?
+  retrievalScore        Float          @default(0) @map("retrieval_score")
+  hallucinationScore    Float          @default(0) @map("hallucination_score")
+  responseQualityScore  Float          @default(0) @map("response_quality_score")
+  overallScore          Float          @default(0) @map("overall_score")
+  risk                  String         @default("medium")
+  issues                Json           @default("[]")
+  metadata              Json           @default("{}")
+  organization          Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  run                   EvaluationRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  evaluationCase        EvaluationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdAt             DateTime       @default(now()) @map("created_at")
+
+  @@unique([runId, caseId])
+  @@index([organizationId, runId])
+  @@index([organizationId, overallScore])
+  @@map("evaluation_results")
 }

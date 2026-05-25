@@ -13,6 +13,8 @@ export const rolePermissions = {
     "settings:update",
     "billing:read",
     "billing:manage",
+    "evaluations:read",
+    "evaluations:write",
     "security:read",
     "security:audit",
     "data:export",
@@ -30,6 +32,8 @@ export const rolePermissions = {
     "settings:update",
     "billing:read",
     "billing:manage",
+    "evaluations:read",
+    "evaluations:write",
     "security:read",
     "security:audit",
     "data:export",
@@ -41,8 +45,16 @@ export const rolePermissions = {
     "knowledge:write",
     "settings:read",
     "billing:read",
+    "evaluations:read",
   ],
-  viewer: ["workspace:read", "members:read", "knowledge:read", "settings:read", "billing:read"],
+  viewer: [
+    "workspace:read",
+    "members:read",
+    "knowledge:read",
+    "settings:read",
+    "billing:read",
+    "evaluations:read",
+  ],
 } satisfies Record<WorkspaceRole, Permission[]>;
 
 export function normalizeClerkRole(role?: string | null): WorkspaceRole {

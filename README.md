@@ -112,6 +112,7 @@ Deployment behavior:
 - `/dashboard/knowledge-base` document management and upload workspace
 - `/dashboard/connectors` enterprise source connector management
 - `/dashboard/workflows` AI workflow automation builder and run history
+- `/dashboard/evaluations` AI retrieval, hallucination, and response quality benchmark platform
 - `/dashboard/observability` AI, retrieval, usage, and performance telemetry
 - `/dashboard/security` audit logs, governance settings, rate limits, and GDPR controls
 - `/dashboard/settings` workspace and profile settings
@@ -426,6 +427,27 @@ Metrics are exposed at:
 
 ```bash
 GET /api/observability/metrics
+```
+
+## AI Evaluation Framework
+
+The evaluation platform lives under `apps/web/lib/evaluations` and is exposed at `/dashboard/evaluations`.
+
+- `evaluation_datasets` and `evaluation_cases` store tenant-scoped benchmark datasets, expected answers, required keywords, expected citations, and expected documents.
+- `evaluation_runs` and `evaluation_results` store benchmark execution status, aggregate scores, per-case scores, retrieved context, citations, risks, and issues.
+- Retrieval evaluation uses the production RAG engine, including hybrid retrieval, query decomposition, multi-query expansion, reranking, and citation metadata.
+- Hallucination scoring checks grounding against retrieved context, unsupported citations, weak retrieval risk, and uncertainty language.
+- Response quality scoring checks required keyword coverage, expected-answer overlap, citation recall, and answer shape.
+- The scoring path is deterministic and CI-friendly; LLM-as-judge graders can be added behind the same service boundary when external model calls are desired.
+
+Evaluation APIs:
+
+```bash
+GET /api/evaluations/datasets
+POST /api/evaluations/datasets
+GET /api/evaluations/runs
+POST /api/evaluations/runs
+GET /api/evaluations/runs/:runId
 ```
 
 ## Agent Framework
