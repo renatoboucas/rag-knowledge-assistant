@@ -116,6 +116,29 @@ enum MemoryStatus {
   ARCHIVED
 }
 
+enum BillingPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
+}
+
+enum BillingUsageMetric {
+  AI_TOKENS
+  STORAGE_GB
+  SEATS
+}
+
 model User {
   id          String       @id @default(cuid())
   clerkId     String       @unique @map("clerk_id")
@@ -163,6 +186,10 @@ model Organization {
   connectorSyncJobs ConnectorSyncJob[]
   workflows Workflow[]
   workflowRuns WorkflowRun[]
+  billingCustomer BillingCustomer?
+  subscriptions Subscription[]
+  usageEvents UsageEvent[]
+  invoices Invoice[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -588,4 +615,92 @@ model RateLimitBucket {
   @@unique([key, route, windowStart])
   @@index([organizationId, route, expiresAt])
   @@map("rate_limit_buckets")
+}
+
+model BillingCustomer {
+  id               String       @id @default(cuid())
+  organizationId   String       @unique @map("organization_id")
+  stripeCustomerId String       @unique @map("stripe_customer_id")
+  email            String?
+  name             String?
+  metadata         Json         @default("{}")
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@map("billing_customers")
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  organizationId         String             @map("organization_id")
+  stripeSubscriptionId   String             @unique @map("stripe_subscription_id")
+  stripeCustomerId       String             @map("stripe_customer_id")
+  stripePriceId          String?            @map("stripe_price_id")
+  stripeProductId        String?            @map("stripe_product_id")
+  plan                   BillingPlan        @default(FREE)
+  status                 SubscriptionStatus @default(INCOMPLETE)
+  quantity               Int                @default(1)
+  currentPeriodStart     DateTime?          @map("current_period_start")
+  currentPeriodEnd       DateTime?          @map("current_period_end")
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt             DateTime?          @map("canceled_at")
+  trialEndsAt            DateTime?          @map("trial_ends_at")
+  metadata               Json               @default("{}")
+  organization           Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  usageEvents            UsageEvent[]
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  @@index([organizationId, status])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+model UsageEvent {
+  id                  String             @id @default(cuid())
+  organizationId      String             @map("organization_id")
+  subscriptionId      String?            @map("subscription_id")
+  metric              BillingUsageMetric
+  quantity            Int
+  unitAmount          Float              @default(0) @map("unit_amount")
+  amount              Float              @default(0)
+  stripeMeterEventId  String?            @unique @map("stripe_meter_event_id")
+  stripeCustomerId    String?            @map("stripe_customer_id")
+  idempotencyKey      String             @unique @map("idempotency_key")
+  source              String             @default("internal")
+  metadata            Json               @default("{}")
+  occurredAt          DateTime           @default(now()) @map("occurred_at")
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription        Subscription?      @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  createdAt           DateTime           @default(now()) @map("created_at")
+
+  @@index([organizationId, metric, occurredAt])
+  @@index([subscriptionId, occurredAt])
+  @@map("usage_events")
+}
+
+model Invoice {
+  id              String       @id @default(cuid())
+  organizationId  String       @map("organization_id")
+  stripeInvoiceId String       @unique @map("stripe_invoice_id")
+  stripeCustomerId String      @map("stripe_customer_id")
+  status          String
+  currency        String       @default("usd")
+  subtotal        Int          @default(0)
+  total           Int          @default(0)
+  amountPaid      Int          @default(0) @map("amount_paid")
+  hostedInvoiceUrl String?     @map("hosted_invoice_url")
+  invoicePdf      String?      @map("invoice_pdf")
+  periodStart     DateTime?    @map("period_start")
+  periodEnd       DateTime?    @map("period_end")
+  metadata        Json         @default("{}")
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([organizationId, createdAt])
+  @@index([stripeCustomerId])
+  @@map("invoices")
 }

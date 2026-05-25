@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { billingService } from "@/lib/billing";
 import { env } from "@/lib/env";
 import { cacheKey, getOrSetCache, privateCacheHeaders } from "@/lib/performance/cache";
 import { getSessionContext } from "@/lib/session";
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
         retrievalLogs,
         connectors,
         workflows,
+        billing,
       ] = await Promise.all([
         prisma.organization.findUniqueOrThrow({
           where: { id: organizationId },
@@ -155,6 +157,7 @@ export async function GET(request: Request) {
           orderBy: { updatedAt: "desc" },
           take: 100,
         }),
+        billingService.getOverview(organizationId),
       ]);
 
       const aiEvents = events.filter((event) => event.category === "ai");
@@ -210,12 +213,6 @@ export async function GET(request: Request) {
         providerMap.set(provider, current);
       }
 
-      const planBase = memberships.length <= 5 ? 99 : memberships.length <= 25 ? 299 : 799;
-      const usageOverage = Math.max(
-        0,
-        aiEvents.reduce((total, event) => total + event.totalTokens, 0) - 1_000_000,
-      );
-      const estimatedUsageCharge = (usageOverage / 1000) * 0.01;
       return {
         range: { days, since },
         organization,
@@ -294,15 +291,15 @@ export async function GET(request: Request) {
           })),
         },
         billing: {
-          plan:
-            memberships.length <= 5 ? "Team" : memberships.length <= 25 ? "Business" : "Enterprise",
+          plan: billing.plan.name,
           seats: memberships.length,
-          seatUnitPrice: planBase / Math.max(memberships.length, 1),
-          baseSubscription: planBase,
-          usageCharge: estimatedUsageCharge,
-          estimatedMonthlyTotal: planBase + estimatedUsageCharge,
-          includedTokens: 1_000_000,
-          billableTokens: usageOverage,
+          seatUnitPrice: billing.plan.monthlyPriceCents / 100 / Math.max(memberships.length, 1),
+          baseSubscription: billing.plan.monthlyPriceCents / 100,
+          usageCharge: billing.usage.estimatedTokenOverageCents / 100,
+          estimatedMonthlyTotal:
+            (billing.plan.monthlyPriceCents + billing.usage.estimatedTokenOverageCents) / 100,
+          includedTokens: billing.usage.includedTokens,
+          billableTokens: billing.usage.billableTokens,
         },
       };
     },

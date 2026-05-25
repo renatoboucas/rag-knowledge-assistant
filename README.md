@@ -127,6 +127,11 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_replace_me
 CLERK_SECRET_KEY=sk_test_replace_me
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/rag_knowledge_assistant?schema=public
 ENCRYPTION_KEY=replace_with_32_plus_character_key
+STRIPE_SECRET_KEY=sk_test_replace_me
+STRIPE_WEBHOOK_SECRET=whsec_replace_me
+STRIPE_PRO_PRICE_ID=price_pro_replace_me
+STRIPE_ENTERPRISE_PRICE_ID=price_enterprise_replace_me
+STRIPE_AI_TOKEN_METER_EVENT_NAME=ai_tokens
 ```
 
 ## Authentication And Database
@@ -150,6 +155,45 @@ pnpm db:seed
 ```
 
 Protected app routes are enforced in `apps/web/middleware.ts`. API routes perform their own session, organization, role, and input validation before mutating data.
+
+## SaaS Billing
+
+Billing is implemented under `apps/web/lib/billing` with Stripe Checkout, Stripe Customer Portal, webhook synchronization, and local usage metering.
+
+- Plans: Free, Pro, and Enterprise.
+- Stripe Checkout creates subscription sessions for Pro and Enterprise.
+- Stripe webhooks sync customers, subscriptions, and invoice snapshots into Prisma.
+- AI token usage is metered locally in `usage_events` and optionally forwarded to Stripe Billing meter events through `STRIPE_AI_TOKEN_METER_EVENT_NAME`.
+- The settings page includes billing status, current token usage, checkout actions, and portal access.
+- Billing APIs are protected with `billing:read` and `billing:manage` RBAC permissions.
+
+Billing APIs:
+
+```bash
+GET /api/billing
+POST /api/billing/checkout
+POST /api/billing/portal
+POST /api/billing/usage
+POST /api/billing/webhook
+```
+
+Stripe webhook events to enable:
+
+```bash
+customer.created
+customer.updated
+checkout.session.completed
+customer.subscription.created
+customer.subscription.updated
+customer.subscription.deleted
+customer.subscription.paused
+customer.subscription.resumed
+invoice.created
+invoice.finalized
+invoice.paid
+invoice.payment_failed
+invoice.updated
+```
 
 ## Enterprise Admin Platform
 

@@ -16,6 +16,7 @@ export default defineConfig({
       include: [
         "apps/web/features/dashboard/page-header.tsx",
         "apps/web/lib/ai/response-validation.ts",
+        "apps/web/lib/billing/plans.ts",
         "apps/web/lib/memory/token-counter.ts",
         "apps/web/lib/performance/cache.ts",
         "apps/web/lib/rag/services/context-builder.ts",

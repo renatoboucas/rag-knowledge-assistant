@@ -54,6 +54,12 @@ const envSchema = z.object({
   MEMORY_RETRIEVAL_LIMIT: z.coerce.number().int().positive().max(20).default(6),
   MEMORY_MAX_CONTEXT_TOKENS: z.coerce.number().int().positive().default(1800),
   MEMORY_SUMMARY_TRIGGER_TOKENS: z.coerce.number().int().positive().default(2400),
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRO_PRICE_ID: z.string().min(1).optional(),
+  STRIPE_ENTERPRISE_PRICE_ID: z.string().min(1).optional(),
+  STRIPE_AI_TOKEN_METER_EVENT_NAME: z.string().min(1).optional(),
+  BILLING_PORTAL_RETURN_PATH: z.string().min(1).default("/dashboard/settings"),
 });
 
 export const env = envSchema.parse({
@@ -110,4 +116,10 @@ export const env = envSchema.parse({
   MEMORY_RETRIEVAL_LIMIT: process.env.MEMORY_RETRIEVAL_LIMIT,
   MEMORY_MAX_CONTEXT_TOKENS: process.env.MEMORY_MAX_CONTEXT_TOKENS,
   MEMORY_SUMMARY_TRIGGER_TOKENS: process.env.MEMORY_SUMMARY_TRIGGER_TOKENS,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRO_PRICE_ID: process.env.STRIPE_PRO_PRICE_ID,
+  STRIPE_ENTERPRISE_PRICE_ID: process.env.STRIPE_ENTERPRISE_PRICE_ID,
+  STRIPE_AI_TOKEN_METER_EVENT_NAME: process.env.STRIPE_AI_TOKEN_METER_EVENT_NAME,
+  BILLING_PORTAL_RETURN_PATH: process.env.BILLING_PORTAL_RETURN_PATH,
 });

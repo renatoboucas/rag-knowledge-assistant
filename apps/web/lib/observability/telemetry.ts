@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
 import { prisma } from "@/lib/prisma";
+import { usageMetering } from "@/lib/billing/usage-metering-service";
 import { getPostHogServerClient } from "@/lib/observability/posthog-server";
 import type { CaptureEventInput } from "@/lib/observability/types";
 
@@ -35,6 +36,24 @@ export class TelemetryService {
       .catch((error: unknown) => {
         Sentry.captureException(error);
       });
+
+    if (input.category === "ai" && input.organizationId && totalTokens > 0) {
+      await usageMetering
+        .recordAiTokens({
+          organizationId: input.organizationId,
+          quantity: totalTokens,
+          idempotencyKey: `observability:${input.traceId ?? input.name}:${Date.now()}`,
+          source: input.name,
+          metadata: {
+            provider: input.provider,
+            model: input.model,
+            traceId: input.traceId,
+          },
+        })
+        .catch((error: unknown) => {
+          Sentry.captureException(error);
+        });
+    }
 
     const posthog = getPostHogServerClient();
 

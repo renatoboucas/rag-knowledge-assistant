@@ -31,6 +31,8 @@ export type Permission =
   | "knowledge:write"
   | "settings:read"
   | "settings:update"
+  | "billing:read"
+  | "billing:manage"
   | "security:read"
   | "security:audit"
   | "data:export"
