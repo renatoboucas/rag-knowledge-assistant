@@ -4,6 +4,13 @@ import type { Workspace } from "@rag/types";
 import { prisma } from "@/lib/prisma";
 import { normalizeClerkRole } from "@/lib/rbac";
 
+function personalWorkspaceSlug(userId: string) {
+  return `personal-${userId
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 48)}`;
+}
+
 export async function getSessionContext() {
   const session = await auth();
 
@@ -93,6 +100,51 @@ export async function getSessionContext() {
       name: dbOrganization.name,
       slug: dbOrganization.slug,
       role,
+    };
+  } else {
+    const personalClerkId = `personal:${user.id}`;
+    const dbOrganization = await prisma.organization.upsert({
+      where: { clerkId: personalClerkId },
+      update: {
+        name: `${user.firstName ?? primaryEmail.split("@")[0] ?? "Personal"} Workspace`,
+        slug: personalWorkspaceSlug(user.id),
+        imageUrl: user.imageUrl,
+      },
+      create: {
+        clerkId: personalClerkId,
+        name: `${user.firstName ?? primaryEmail.split("@")[0] ?? "Personal"} Workspace`,
+        slug: personalWorkspaceSlug(user.id),
+        imageUrl: user.imageUrl,
+      },
+    });
+
+    await prisma.membership.upsert({
+      where: {
+        userId_organizationId: {
+          userId: dbUser.id,
+          organizationId: dbOrganization.id,
+        },
+      },
+      update: {
+        clerkRole: "personal:owner",
+        role: "OWNER",
+        status: "ACTIVE",
+      },
+      create: {
+        userId: dbUser.id,
+        organizationId: dbOrganization.id,
+        clerkRole: "personal:owner",
+        role: "OWNER",
+        status: "ACTIVE",
+      },
+    });
+
+    workspace = {
+      id: dbOrganization.id,
+      clerkId: dbOrganization.clerkId,
+      name: dbOrganization.name,
+      slug: dbOrganization.slug,
+      role: "owner",
     };
   }
 

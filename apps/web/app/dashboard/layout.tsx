@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     context = await getSessionContext();
   } catch (error) {
     console.error("Dashboard session resolution failed", error);
-    return <DashboardSessionRequired />;
+    return <DashboardSessionRequired detail={error instanceof Error ? error.message : undefined} />;
   }
 
   if (!context) {
