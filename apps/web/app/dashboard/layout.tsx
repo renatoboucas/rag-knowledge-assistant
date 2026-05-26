@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-
+import { DashboardSessionRequired } from "@/components/auth/dashboard-session-required";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getSessionContext } from "@/lib/session";
 
@@ -12,11 +11,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     context = await getSessionContext();
   } catch (error) {
     console.error("Dashboard session resolution failed", error);
-    redirect("/sign-in?redirect_url=/dashboard");
+    return <DashboardSessionRequired />;
   }
 
   if (!context) {
-    redirect("/sign-in?redirect_url=/dashboard");
+    return (
+      <DashboardSessionRequired
+        title="Sign in required"
+        description="The dashboard could not find an active Clerk session. Sign in again to continue."
+      />
+    );
   }
 
   return <DashboardShell>{children}</DashboardShell>;
