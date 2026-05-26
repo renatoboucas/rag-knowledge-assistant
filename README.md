@@ -90,9 +90,11 @@ Production environment variables must include:
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://your-production-domain.com
+NEXT_PUBLIC_REALTIME_URL=https://your-realtime-domain.com
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
 DATABASE_URL=...
+REDIS_URL=...
 ENCRYPTION_KEY=...
 OPENAI_API_KEY=...
 ```
@@ -126,9 +128,13 @@ The web app validates environment variables with Zod in `apps/web/lib/env.ts`.
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_APP_NAME=RAG Knowledge Assistant
+NEXT_PUBLIC_REALTIME_URL=http://localhost:3000
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_replace_me
 CLERK_SECRET_KEY=sk_test_replace_me
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/rag_knowledge_assistant?schema=public
+REDIS_URL=redis://localhost:6379
+REALTIME_CORS_ORIGIN=http://localhost:3000
+REALTIME_PRESENCE_TTL_SECONDS=45
 ENCRYPTION_KEY=replace_with_32_plus_character_key
 STRIPE_SECRET_KEY=sk_test_replace_me
 STRIPE_WEBHOOK_SECRET=whsec_replace_me
@@ -158,6 +164,25 @@ pnpm db:seed
 ```
 
 Protected app routes are enforced in `apps/web/middleware.ts`. API routes perform their own session, organization, role, and input validation before mutating data.
+
+## Real-Time Infrastructure
+
+Real-time collaboration is implemented under `apps/web/lib/realtime` and `apps/web/hooks/use-realtime.ts`.
+
+- `server.ts` boots Next.js with a Socket.io server at `/api/realtime/socket.io`.
+- `event-bus.ts` provides a typed Pub/Sub abstraction with Redis and in-memory implementations.
+- `redis-adapter.ts` wires Socket.io horizontal scaling through `@socket.io/redis-adapter` when `REDIS_URL` is set.
+- `presence-store.ts` tracks online users for organization-scoped rooms.
+- `useRealtimeSocket` and `useConversationRealtime` provide reconnection, presence, and typing state on the frontend.
+- The chat workspace keeps HTTP/SSE AI streaming as the primary response path and layers Socket.io on top for presence, typing, event broadcasts, and session synchronization.
+
+Run the Socket.io-enabled local server:
+
+```bash
+pnpm dev:realtime
+```
+
+For production Node hosting, set `NEXT_PUBLIC_REALTIME_URL` to the public origin that runs `apps/web/server.ts`. Vercel serverless deployments can continue using the HTTP streaming chat path; deploy the realtime server separately when WebSocket fanout is required.
 
 ## SaaS Billing
 

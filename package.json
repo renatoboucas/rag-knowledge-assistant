@@ -5,6 +5,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "pnpm --filter @rag/web dev",
+    "dev:realtime": "pnpm --filter @rag/web dev:realtime",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",

@@ -49,3 +49,48 @@ export type Workspace = {
   slug?: string | null;
   role: WorkspaceRole;
 };
+
+export type RealtimeChannel =
+  | `organization:${string}`
+  | `conversation:${string}`
+  | `user:${string}`;
+
+export type RealtimeEventType =
+  | "ai.stream.started"
+  | "ai.stream.token"
+  | "ai.stream.completed"
+  | "ai.stream.failed"
+  | "presence.joined"
+  | "presence.left"
+  | "presence.heartbeat"
+  | "typing.started"
+  | "typing.stopped"
+  | "conversation.updated"
+  | "session.synchronized";
+
+export type RealtimeActor = {
+  userId: string;
+  organizationId: string;
+  name?: string | null;
+  imageUrl?: string | null;
+};
+
+export type RealtimeEvent<TPayload = Record<string, unknown>> = {
+  id: string;
+  type: RealtimeEventType;
+  channel: RealtimeChannel;
+  actor: RealtimeActor;
+  payload: TPayload;
+  createdAt: string;
+};
+
+export type PresenceState = RealtimeActor & {
+  socketId: string;
+  status: "online" | "away";
+  lastSeenAt: string;
+};
+
+export type TypingState = RealtimeActor & {
+  conversationId: string;
+  startedAt: string;
+};

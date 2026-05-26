@@ -12,11 +12,15 @@ import {
   SendHorizontal,
   Square,
   UserRound,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import { Button, Card, CardContent, Textarea, cn } from "@rag/ui";
+
+import { useConversationRealtime } from "@/hooks/use-realtime";
 
 type ChatRole = "user" | "assistant";
 
@@ -175,6 +179,7 @@ export function ChatWorkspace() {
   const [conversationId, setConversationId] = useState<string>();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const realtime = useConversationRealtime(conversationId);
 
   const canSend = input.trim().length > 0 && !isStreaming;
   const lastUserMessage = useMemo(
@@ -238,6 +243,7 @@ export function ChatWorkspace() {
   }
 
   async function streamMessage(content: string, baseMessages = messages) {
+    realtime.stopTyping();
     const userMessage: ChatMessage = { id: createId(), role: "user", content };
     const assistantId = createId();
     const outgoing = [...baseMessages, userMessage];
@@ -403,9 +409,25 @@ export function ChatWorkspace() {
           <div className="flex items-center justify-between border-b px-4 py-3">
             <div>
               <p className="text-sm font-semibold">AI Knowledge Assistant</p>
-              <p className="text-muted-foreground text-xs">Streaming RAG chat with citations</p>
+              <p className="text-muted-foreground text-xs">
+                Streaming RAG chat with citations
+                {realtime.presence.length ? ` · ${realtime.presence.length} online` : ""}
+              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "text-muted-foreground hidden items-center gap-1 rounded-md border px-2 py-1 text-xs md:inline-flex",
+                  realtime.isConnected && "border-emerald-500/30 text-emerald-600",
+                )}
+              >
+                {realtime.isConnected ? (
+                  <Wifi className="size-3" />
+                ) : (
+                  <WifiOff className="size-3" />
+                )}
+                {realtime.status === "disabled" ? "Realtime off" : realtime.status}
+              </span>
               <Button className="xl:hidden" size="sm" variant="outline" onClick={newConversation}>
                 <MessageSquarePlus />
                 New
@@ -456,7 +478,15 @@ export function ChatWorkspace() {
                 className="min-h-16 resize-none"
                 placeholder="Ask a question about your knowledge base..."
                 value={input}
-                onChange={(event) => setInput(event.target.value)}
+                onChange={(event) => {
+                  setInput(event.target.value);
+
+                  if (event.target.value.trim()) {
+                    realtime.startTyping();
+                  } else {
+                    realtime.stopTyping();
+                  }
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
@@ -489,7 +519,11 @@ export function ChatWorkspace() {
               )}
             </div>
             <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
-              <span>Enter to send · Shift+Enter for a new line</span>
+              <span>
+                {realtime.typingUsers.length
+                  ? `${realtime.typingUsers[0]?.name ?? "A teammate"} is typing`
+                  : "Enter to send · Shift+Enter for a new line"}
+              </span>
               {isStreaming ? (
                 <span className="inline-flex items-center gap-1">
                   <Loader2 className="size-3 animate-spin" />
