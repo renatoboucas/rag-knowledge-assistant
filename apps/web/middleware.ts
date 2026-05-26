@@ -9,5 +9,5 @@ export default clerkMiddleware(async (auth, request) => {
 });
 
 export const config = {
-  matcher: ["/dashboard(.*)"],
+  matcher: ["/dashboard(.*)", "/api/(.*)"],
 };
