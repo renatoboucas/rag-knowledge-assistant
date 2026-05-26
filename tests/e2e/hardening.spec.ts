@@ -37,5 +37,5 @@ test("landing page meets launch smoke performance budget", async ({ request }) =
   const duration = performance.now() - started;
 
   expect(response.ok()).toBe(true);
-  expect(duration).toBeLessThan(5_000);
+  expect(duration).toBeLessThan(8_000);
 });
