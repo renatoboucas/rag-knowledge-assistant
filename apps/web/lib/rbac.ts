@@ -21,6 +21,8 @@ export const rolePermissions = {
     "security:audit",
     "data:export",
     "data:delete",
+    "voice:read",
+    "voice:manage",
   ],
   admin: [
     "workspace:read",
@@ -41,6 +43,8 @@ export const rolePermissions = {
     "security:read",
     "security:audit",
     "data:export",
+    "voice:read",
+    "voice:manage",
   ],
   member: [
     "workspace:read",
@@ -51,6 +55,8 @@ export const rolePermissions = {
     "billing:read",
     "evaluations:read",
     "developer:read",
+    "voice:read",
+    "voice:manage",
   ],
   viewer: [
     "workspace:read",
@@ -60,6 +66,7 @@ export const rolePermissions = {
     "billing:read",
     "evaluations:read",
     "developer:read",
+    "voice:read",
   ],
 } satisfies Record<WorkspaceRole, Permission[]>;
 

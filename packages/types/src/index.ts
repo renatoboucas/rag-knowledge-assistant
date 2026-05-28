@@ -40,7 +40,9 @@ export type Permission =
   | "security:read"
   | "security:audit"
   | "data:export"
-  | "data:delete";
+  | "data:delete"
+  | "voice:read"
+  | "voice:manage";
 
 export type Workspace = {
   id: string;
@@ -93,4 +95,38 @@ export type PresenceState = RealtimeActor & {
 export type TypingState = RealtimeActor & {
   conversationId: string;
   startedAt: string;
+};
+
+export type VoiceProvider = "openai_realtime" | "elevenlabs" | "deepgram";
+
+export type VoiceSessionState =
+  | "initializing"
+  | "connecting"
+  | "listening"
+  | "speaking"
+  | "interrupted"
+  | "ended"
+  | "failed";
+
+export type VoiceSessionSummary = {
+  id: string;
+  provider: VoiceProvider;
+  model: string;
+  voice?: string | null;
+  status: VoiceSessionState;
+  transport: "webrtc" | "websocket";
+  startedAt?: string | null;
+  endedAt?: string | null;
+  lastEventAt?: string | null;
+  createdAt: string;
+};
+
+export type VoiceProviderCapability = {
+  provider: VoiceProvider;
+  label: string;
+  configured: boolean;
+  supportsWebrtc: boolean;
+  supportsStreaming: boolean;
+  supportsVad: boolean;
+  supportsInterruptions: boolean;
 };

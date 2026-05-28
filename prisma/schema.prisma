@@ -146,6 +146,22 @@ enum EvaluationRunStatus {
   FAILED
 }
 
+enum VoiceProvider {
+  OPENAI_REALTIME
+  ELEVENLABS
+  DEEPGRAM
+}
+
+enum VoiceSessionStatus {
+  INITIALIZING
+  CONNECTING
+  LISTENING
+  SPEAKING
+  INTERRUPTED
+  ENDED
+  FAILED
+}
+
 model User {
   id          String       @id @default(cuid())
   clerkId     String       @unique @map("clerk_id")
@@ -162,6 +178,7 @@ model User {
   connectors  Connector[]  @relation("ConnectorCreatedBy")
   workflows   Workflow[]   @relation("WorkflowCreatedBy")
   apiKeys     ApiKey[]      @relation("ApiKeyCreatedBy")
+  voiceSessions VoiceSession[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -204,6 +221,7 @@ model Organization {
   evaluationResults EvaluationResult[]
   apiKeys ApiKey[]
   apiRequestLogs ApiRequestLog[]
+  voiceSessions VoiceSession[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -435,6 +453,7 @@ model Conversation {
   summaries      ConversationSummary[]
   memoryItems    MemoryItem[]
   retrievalLogs  RetrievalLog[]
+  voiceSessions  VoiceSession[]
   deletedAt      DateTime?          @map("deleted_at")
   createdAt      DateTime           @default(now()) @map("created_at")
   updatedAt      DateTime           @updatedAt @map("updated_at")
@@ -484,6 +503,40 @@ model ConversationSummary {
 
   @@index([organizationId, conversationId, createdAt])
   @@map("conversation_summaries")
+}
+
+model VoiceSession {
+  id                String             @id @default(cuid())
+  organizationId    String             @map("organization_id")
+  userId            String?            @map("user_id")
+  conversationId    String?            @map("conversation_id")
+  provider          VoiceProvider      @default(OPENAI_REALTIME)
+  model             String
+  voice             String?
+  status            VoiceSessionStatus @default(INITIALIZING)
+  transport         String             @default("webrtc")
+  inputAudioFormat  String             @default("pcm16") @map("input_audio_format")
+  outputAudioFormat String             @default("pcm16") @map("output_audio_format")
+  sampleRate        Int                @default(24000) @map("sample_rate")
+  transcript        Json               @default("[]")
+  metrics           Json               @default("{}")
+  metadata          Json               @default("{}")
+  startedAt         DateTime?          @map("started_at")
+  endedAt           DateTime?          @map("ended_at")
+  lastEventAt       DateTime?          @map("last_event_at")
+  errorMessage      String?            @map("error_message")
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  conversation      Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  deletedAt         DateTime?          @map("deleted_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, provider, createdAt])
+  @@index([organizationId, conversationId])
+  @@index([userId, createdAt])
+  @@map("voice_sessions")
 }
 
 model MemoryItem {

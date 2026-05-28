@@ -3,6 +3,7 @@ export type ObservabilityCategory =
   | "retrieval"
   | "agent"
   | "tool"
+  | "voice"
   | "error"
   | "user"
   | "performance";

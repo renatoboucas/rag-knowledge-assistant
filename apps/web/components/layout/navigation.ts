@@ -4,6 +4,7 @@ export const navigation: NavItem[] = [
   { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
   { title: "Admin", href: "/dashboard/admin", icon: "ShieldCheck" },
   { title: "Chat", href: "/dashboard/chat", icon: "MessageSquareText" },
+  { title: "Voice Agent", href: "/dashboard/voice", icon: "AudioLines" },
   { title: "Knowledge Base", href: "/dashboard/knowledge-base", icon: "Database" },
   { title: "Connectors", href: "/dashboard/connectors", icon: "Cable" },
   { title: "Workflows", href: "/dashboard/workflows", icon: "Workflow" },

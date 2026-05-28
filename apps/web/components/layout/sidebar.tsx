@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  AudioLines,
   BrainCircuit,
   Cable,
   ClipboardCheck,
@@ -30,6 +31,7 @@ const icons = {
   ClipboardCheck,
   KeyRound,
   Activity,
+  AudioLines,
   ShieldCheck,
   Users,
   Settings,
