@@ -162,6 +162,30 @@ enum VoiceSessionStatus {
   FAILED
 }
 
+enum TranscriptionProvider {
+  DEEPGRAM
+  WHISPER
+  ASSEMBLYAI
+}
+
+enum AudioSessionStatus {
+  CREATED
+  STREAMING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TranscriptStatus {
+  DRAFT
+  STREAMING
+  PROCESSING
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
 model User {
   id          String       @id @default(cuid())
   clerkId     String       @unique @map("clerk_id")
@@ -179,6 +203,8 @@ model User {
   workflows   Workflow[]   @relation("WorkflowCreatedBy")
   apiKeys     ApiKey[]      @relation("ApiKeyCreatedBy")
   voiceSessions VoiceSession[]
+  audioSessions AudioSession[]
+  transcripts Transcript[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -222,6 +248,9 @@ model Organization {
   apiKeys ApiKey[]
   apiRequestLogs ApiRequestLog[]
   voiceSessions VoiceSession[]
+  audioSessions AudioSession[]
+  transcripts Transcript[]
+  transcriptSegments TranscriptSegment[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -528,6 +557,7 @@ model VoiceSession {
   organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
   conversation      Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  audioSessions     AudioSession[]
   deletedAt         DateTime?          @map("deleted_at")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
@@ -537,6 +567,94 @@ model VoiceSession {
   @@index([organizationId, conversationId])
   @@index([userId, createdAt])
   @@map("voice_sessions")
+}
+
+model AudioSession {
+  id             String             @id @default(cuid())
+  organizationId String             @map("organization_id")
+  userId         String?            @map("user_id")
+  voiceSessionId String?            @map("voice_session_id")
+  provider       TranscriptionProvider
+  status         AudioSessionStatus @default(CREATED)
+  language       String             @default("en")
+  sampleRate     Int                @default(16000) @map("sample_rate")
+  channels       Int                @default(1)
+  encoding       String             @default("linear16")
+  source         String             @default("microphone")
+  metadata       Json               @default("{}")
+  startedAt      DateTime?          @map("started_at")
+  endedAt        DateTime?          @map("ended_at")
+  lastEventAt    DateTime?          @map("last_event_at")
+  errorMessage   String?            @map("error_message")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  voiceSession   VoiceSession?      @relation(fields: [voiceSessionId], references: [id], onDelete: SetNull)
+  transcripts    Transcript[]
+  deletedAt      DateTime?          @map("deleted_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, provider, createdAt])
+  @@index([voiceSessionId])
+  @@index([userId, createdAt])
+  @@map("audio_sessions")
+}
+
+model Transcript {
+  id             String            @id @default(cuid())
+  organizationId String            @map("organization_id")
+  audioSessionId String            @map("audio_session_id")
+  createdById    String?           @map("created_by_id")
+  title          String
+  status         TranscriptStatus  @default(DRAFT)
+  language       String            @default("en")
+  detectedLanguages String[]       @default([]) @map("detected_languages")
+  speakerCount   Int               @default(0) @map("speaker_count")
+  durationMs     Int               @default(0) @map("duration_ms")
+  wordCount      Int               @default(0) @map("word_count")
+  confidence     Float?
+  fullText       String            @default("") @map("full_text")
+  correctedText  String?           @map("corrected_text")
+  metadata       Json              @default("{}")
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  audioSession   AudioSession      @relation(fields: [audioSessionId], references: [id], onDelete: Cascade)
+  createdBy      User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  segments       TranscriptSegment[]
+  deletedAt      DateTime?         @map("deleted_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@index([organizationId, status, deletedAt])
+  @@index([organizationId, language, createdAt])
+  @@index([audioSessionId])
+  @@map("transcripts")
+}
+
+model TranscriptSegment {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  transcriptId   String       @map("transcript_id")
+  segmentIndex   Int          @map("segment_index")
+  speakerLabel   String?      @map("speaker_label")
+  language       String       @default("en")
+  text           String
+  correctedText  String?      @map("corrected_text")
+  startMs        Int          @default(0) @map("start_ms")
+  endMs          Int          @default(0) @map("end_ms")
+  confidence     Float?
+  words          Json         @default("[]")
+  metadata       Json         @default("{}")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transcript     Transcript   @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  deletedAt      DateTime?    @map("deleted_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([transcriptId, segmentIndex])
+  @@index([organizationId, transcriptId, startMs])
+  @@index([organizationId, speakerLabel])
+  @@map("transcript_segments")
 }
 
 model MemoryItem {

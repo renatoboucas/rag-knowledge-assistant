@@ -42,7 +42,9 @@ export type Permission =
   | "data:export"
   | "data:delete"
   | "voice:read"
-  | "voice:manage";
+  | "voice:manage"
+  | "transcription:read"
+  | "transcription:manage";
 
 export type Workspace = {
   id: string;
@@ -129,4 +131,76 @@ export type VoiceProviderCapability = {
   supportsStreaming: boolean;
   supportsVad: boolean;
   supportsInterruptions: boolean;
+};
+
+export type TranscriptionProvider = "deepgram" | "whisper" | "assemblyai";
+
+export type AudioSessionStatus =
+  | "created"
+  | "streaming"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type TranscriptStatus =
+  | "draft"
+  | "streaming"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "archived";
+
+export type TranscriptionProviderCapability = {
+  provider: TranscriptionProvider;
+  label: string;
+  configured: boolean;
+  supportsStreaming: boolean;
+  supportsSpeakerDetection: boolean;
+  supportsTimestamps: boolean;
+  supportsMultiLanguage: boolean;
+  supportsCorrection: boolean;
+};
+
+export type AudioSessionSummary = {
+  id: string;
+  provider: TranscriptionProvider;
+  status: AudioSessionStatus;
+  language: string;
+  sampleRate: number;
+  source: string;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  createdAt: string;
+};
+
+export type TranscriptSegmentSummary = {
+  id: string;
+  segmentIndex: number;
+  speakerLabel?: string | null;
+  language: string;
+  text: string;
+  correctedText?: string | null;
+  startMs: number;
+  endMs: number;
+  confidence?: number | null;
+  createdAt: string;
+};
+
+export type TranscriptSummary = {
+  id: string;
+  audioSessionId: string;
+  title: string;
+  status: TranscriptStatus;
+  language: string;
+  detectedLanguages: string[];
+  speakerCount: number;
+  durationMs: number;
+  wordCount: number;
+  confidence?: number | null;
+  fullText: string;
+  correctedText?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  segments?: TranscriptSegmentSummary[];
 };
